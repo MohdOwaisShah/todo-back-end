@@ -1,64 +1,46 @@
-// Import required modules
-const express = require("express")
-const mongoose = require("mongoose")
-const cors = require("cors")
-const TodoModel = require('./models/todo') // Import the Mongoose model for todos
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const TodoModel = require('./models/todo');
 
-const app = express()
+dotenv.config();
 
-// Middleware to enable CORS for all routes and origins
-app.use(cors())
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-// Middleware to parse incoming JSON request bodies
-app.use(express.json())
+// Use environment variable for MongoDB
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
-// Connect to MongoDB using Mongoose
-mongoose.connect("mongodb+srv://owaisshahh245:rgA8tkjMwZl7ZcR6@cluster0.tywl5yl.mongodb.net/todoapp")
-
-
-// Route to handle POST request for adding todo data to the database
+// Add Todo
 app.post("/add", (req, res) => {
-    const todoData = req.body.data  // Extract todo data from request body
-    console.log(todoData)  // Log the data to the console for debugging
+  const todoData = req.body.data;
+  TodoModel.create({ data: todoData })
+    .then(result => res.json(result))
+    .catch(error => res.json(error));
+});
 
-    // Create a new todo document in MongoDB
-    TodoModel.create({
-        data: todoData
-    })
-    .then(result => res.json(result))  // Send the created document as JSON response
-    .catch(error => res.json(error))   // Send error if any occurs
-})
-
-// using async await
-// app.post("/add", async (req, res) => {
-//     const todoData = req.body.data;
-
-//     try {
-//         const result = await TodoModel.create({ data: todoData });
-//         res.json(result); // Send the created document as JSON response
-//     } catch (error) {
-//         res.json(error); // Send error if any occurs
-//     }
-// });
-
+// Get Todos
 app.get("/get", (req, res) => {
-    
-    TodoModel.find()
+  TodoModel.find()
     .then(result => res.json(result))
-    .catch(err => res.json(err))
-})
+    .catch(err => res.json(err));
+});
 
-
-// delete
-app.delete("/delete:id", (req, res) => {
-    // destructuring id
-    const {id} = req.params 
-    TodoModel.findByIdAndDelete({_id: id})
+// Delete Todo
+app.delete("/delete/:id", (req, res) => {
+  const { id } = req.params;
+  TodoModel.findByIdAndDelete(id)
     .then(result => res.json(result))
-    .catch(err => res.json(err))
-})
+    .catch(err => res.json(err));
+});
 
-// Start the server on port 3000
-app.listen(3000, () => {
-    console.log("server starting")
-})
+// Use dynamic port
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
